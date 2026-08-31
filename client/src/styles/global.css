@@ -1,0 +1,225 @@
+/* ==========================================================================
+   TRIO — design tokens.
+
+   Palette, easings and type pairing are taken from the reference experience
+   (xox.makemepulse.com); hex values and cubic-beziers below were read from its
+   compiled stylesheet, and the two text faces are the same free Google fonts it
+   uses. The heavy display face is Lilita One — the reference's own brush face
+   is a proprietary file and is deliberately not used.
+   ========================================================================== */
+
+:root {
+  /* Type ------------------------------------------------------------------ */
+  --font-display: 'Lilita One', 'Bangers', system-ui, sans-serif;
+  --font-ui: 'Bangers', system-ui, sans-serif;
+  --font-body: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --t-hero: clamp(4rem, 15vw, 12rem);
+  --t-display: clamp(2.75rem, 9vw, 7rem);
+  --t-title: clamp(1.75rem, 5vw, 3rem);
+  --t-lead: clamp(1rem, 1.8vw, 1.2rem);
+  --t-body: 1rem;
+  --t-ui: 0.95rem;
+  --t-label: 0.8rem;
+
+  /* Palette — "Dusk" -------------------------------------------------------
+     Every stage colour sits in a narrow mid-dark luminance band, so cream type
+     clears 6:1 against all of them and the full-screen colour flip never
+     changes how readable anything is. The three accents are the only
+     high-chroma things on screen, which is what keeps them reading as accents. */
+
+  --cream: #fbf7f0;
+  --cream-dim: #ded5c7;
+  --ink: #16181f;
+  --ink-soft: #59617180;
+
+  /* Stages, each with a slightly lighter partner for the brush watermarks. */
+  --indigo: #2b3a6b;
+  --indigo-soft: #35437a;
+  --plum: #4a2f63;
+  --plum-soft: #573872;
+  --jade: #146b57;
+  --jade-soft: #1b7c66;
+  --rose: #9e3355;
+  --rose-soft: #b03d60;
+  --slate: #46505f;
+  --slate-soft: #525d6e;
+  --orchid: #6a3a8c;
+  --orchid-soft: #78449c;
+
+  /* Accents. */
+  --amber: #f5b944;
+  --turquoise: #4fd1c5;
+  --coral: #ff7a5c;
+
+  /* Stage colour — swapped per turn / per outcome by the Stage component.
+     Everything that needs to react to the background reads these. */
+  --stage: var(--indigo);
+  --stage-soft: var(--indigo-soft);
+  --on-stage: var(--cream);
+
+  /* Depth. Soft and directional rather than the flat offset blocks that read
+     as a cheap comic sticker. */
+  --shadow-card: 0 20px 44px -20px rgb(8 10 18 / 0.65);
+  --shadow-pill: 0 12px 26px -12px rgb(8 10 18 / 0.6);
+  --shadow-face: 0 14px 26px -12px rgb(8 10 18 / 0.55);
+
+  /* Spacing --------------------------------------------------------------- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+  --s-9: 96px;
+
+  /* Motion — easings lifted from the reference stylesheet ------------------- */
+  --e-out: cubic-bezier(0, 0, 0.2, 1);
+  --e-inout: cubic-bezier(0.4, 0, 0.2, 1);
+  --e-smooth: cubic-bezier(0.26, 1, 0.48, 1);
+  --e-anticipate: cubic-bezier(0.6, -0.28, 0.73, 0.04);
+  --e-back: cubic-bezier(0.17, 0.89, 0.32, 1.27);
+  --e-back-full: cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  --e-expo: cubic-bezier(0.66, 0, 0, 1);
+
+  --d-instant: 120ms;
+  --d-quick: 240ms;
+  --d-base: 380ms;
+  --d-slow: 620ms;
+  --d-stage: 700ms;
+
+  --radius-pill: 999px;
+  --radius: 18px;
+}
+
+/* Base ---------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--stage);
+  color: var(--on-stage);
+  font-family: var(--font-body);
+  font-size: var(--t-body);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  transition: background-color var(--d-stage) var(--e-smooth);
+}
+
+/* The magenta dot cursor replaces the native one on fine pointers. */
+body[data-custom-cursor='on'],
+body[data-custom-cursor='on'] * {
+  cursor: none;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+a {
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--coral);
+  outline-offset: 3px;
+  border-radius: var(--radius-pill);
+}
+
+/* Type utilities ------------------------------------------------------------ */
+
+/* The reference sets its headlines in a heavy brush face, slanted and slightly
+   over-tracked. Lilita One plus a skew gets the same energy from a free font. */
+.hero,
+.display,
+.title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  line-height: 0.88;
+  transform: skewX(-5deg);
+  letter-spacing: 0.01em;
+}
+
+.hero {
+  font-size: var(--t-hero);
+}
+
+.display {
+  font-size: var(--t-display);
+}
+
+.title {
+  font-size: var(--t-title);
+}
+
+.lead {
+  font-size: var(--t-lead);
+  font-weight: 500;
+}
+
+.ui {
+  font-family: var(--font-ui);
+  font-size: var(--t-ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.label {
+  font-family: var(--font-ui);
+  font-size: var(--t-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Reduced motion ------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  body {
+    transition-duration: 160ms !important;
+  }
+}

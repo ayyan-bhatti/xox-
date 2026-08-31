@@ -1,0 +1,128 @@
+.playerbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(6px, 1.4vmin, var(--s-4));
+  flex-wrap: nowrap;
+  max-width: 100%;
+}
+
+.playerbar__slot {
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 1.4vmin, var(--s-4));
+  min-width: 0;
+}
+
+.playerbar__vs {
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cream);
+  opacity: 0.45;
+  flex: none;
+}
+
+.playerbar__chip {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+  padding: 6px clamp(10px, 1.6vmin, 16px) 6px 6px;
+  border-radius: var(--radius-pill);
+  background: rgb(251 247 240 / 0.1);
+  box-shadow: inset 0 0 0 1.5px rgb(251 247 240 / 0.18);
+  transition:
+    background-color var(--d-quick) var(--e-out),
+    box-shadow var(--d-quick) var(--e-out),
+    opacity var(--d-quick) var(--e-out);
+}
+
+/* The active player's chip picks up their own rim colour — the same colour
+   their face carries on the board, so the link is unmistakable. */
+.playerbar__chip[data-active] {
+  background: rgb(251 247 240 / 0.16);
+  box-shadow: inset 0 0 0 2px var(--rim);
+}
+
+.playerbar__chip[data-away] {
+  opacity: 0.5;
+}
+
+.playerbar__face {
+  display: block;
+  width: clamp(28px, 4.4vmin, 40px);
+  height: clamp(28px, 4.4vmin, 40px);
+  flex: none;
+}
+
+.playerbar__text {
+  display: grid;
+  text-align: left;
+  min-width: 0;
+}
+
+.playerbar__name {
+  font-family: var(--font-ui);
+  font-size: clamp(0.78rem, 1.5vmin, 0.95rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cream);
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.playerbar__symbol {
+  font-family: var(--font-body);
+  font-size: clamp(0.6rem, 1.15vmin, 0.72rem);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rim);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.playerbar__score {
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  color: var(--cream);
+  opacity: 0.8;
+  padding-left: var(--s-2);
+  flex: none;
+}
+
+.playerbar__pip {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: transparent;
+  flex: none;
+  transition: background-color var(--d-quick) var(--e-out);
+}
+
+.playerbar__chip[data-active] .playerbar__pip {
+  background: var(--rim);
+  animation: pip-pulse 1200ms var(--e-inout) infinite alternate;
+}
+
+@keyframes pip-pulse {
+  from { opacity: 0.35; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .playerbar__chip[data-active] .playerbar__pip {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .playerbar__symbol {
+    font-size: 0.58rem;
+  }
+}

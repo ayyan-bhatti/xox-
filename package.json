@@ -1,0 +1,28 @@
+{
+  "name": "trio",
+  "private": true,
+  "version": "1.0.0",
+  "description": "A fast, animated tic-tac-toe: vs AI, local 2-player, and online multiplayer.",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently -n client,server -c magenta,cyan \"npm:dev:client\" \"npm:dev:server\"",
+    "dev:client": "npm --workspace client run dev",
+    "dev:server": "npm --workspace server run dev",
+    "build": "npm --workspace client run build",
+    "start": "npm --workspace server run start",
+    "test": "npm --workspace client run test && npm --workspace server run test",
+    "test:client": "npm --workspace client run test",
+    "test:server": "npm --workspace server run test",
+    "typecheck": "npm --workspace client run typecheck && npm --workspace server run typecheck",
+    "preview": "npm --workspace client run preview"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,391 @@
+.screen {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+  height: 100%;
+  /* Not `will-change: transform` — that would make this a containing block for
+     the position:fixed result takeover nested inside it. */
+  will-change: opacity;
+}
+
+/* Status pill shared by every mode ---------------------------------------- */
+
+.toppill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-5);
+  border-radius: var(--radius-pill);
+  background: rgb(251 247 240 / 0.12);
+  box-shadow: inset 0 0 0 1.5px rgb(251 247 240 / 0.3);
+  color: var(--cream);
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.toppill em {
+  font-style: normal;
+  opacity: 0.6;
+}
+
+.toppill--magenta {
+  background: var(--coral);
+  color: var(--ink);
+  box-shadow: var(--shadow-pill);
+}
+
+/* Landing ------------------------------------------------------------------
+   `safe center` rather than `center`: when the content is taller than the
+   viewport, plain centring pushes the top of the page above the scroll origin
+   where it can never be reached — which silently guillotined the title. */
+
+.landing {
+  /* Every size on this screen is driven off --fit, which tracks the SHORTER of
+     the two axes. Sizing on width alone is what produced a scrollbar and a
+     guillotined title on a normal laptop window: the viewport was wide enough
+     to pick the large type but far too short to hold it. */
+  --fit: min(1vw, 1.05vh);
+
+  display: grid;
+  justify-items: center;
+  align-content: safe center;
+  gap: clamp(8px, calc(var(--fit) * 1.6), var(--s-4));
+  text-align: center;
+  width: 100%;
+  max-width: 64rem;
+  margin-inline: auto;
+  padding-block: clamp(8px, calc(var(--fit) * 1.6), var(--s-4));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.landing__title {
+  font-size: clamp(2.6rem, calc(var(--fit) * 9), 7rem);
+  color: var(--cream);
+  line-height: 0.9;
+}
+
+.landing__dot {
+  display: inline-block;
+  width: 0.15em;
+  height: 0.15em;
+  margin-left: 0.05em;
+  border-radius: 50%;
+  background: var(--coral);
+  /* Counter the display skew so the dot stays round. */
+  transform: skewX(5deg);
+}
+
+.landing__tagline {
+  color: var(--cream);
+  opacity: 0.72;
+  max-width: 40ch;
+  font-size: clamp(0.85rem, calc(var(--fit) * 1.15), 1.2rem);
+  margin-top: calc(var(--s-2) * -1);
+}
+
+/* Under ~640px of height there is no room for a subtitle as well as three
+   cards; the cards are the thing people came for. */
+@media (max-height: 640px) {
+  .landing__tagline {
+    display: none;
+  }
+}
+
+.landing__hero {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: clamp(6px, calc(var(--fit) * 1.2), var(--s-3));
+}
+
+.landing__face {
+  width: clamp(68px, calc(var(--fit) * 12), 132px);
+  height: clamp(68px, calc(var(--fit) * 12), 132px);
+  filter: drop-shadow(var(--shadow-face));
+}
+
+.landing__bubble {
+  position: absolute;
+  top: -10px;
+  right: -20%;
+  z-index: 2;
+}
+
+.landing__reroll {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-4);
+  border-radius: var(--radius-pill);
+  background: rgb(251 247 240 / 0.12);
+  box-shadow: inset 0 0 0 1.5px rgb(251 247 240 / 0.28);
+  color: var(--cream);
+  cursor: pointer;
+  transition:
+    background-color var(--d-instant) var(--e-out),
+    box-shadow var(--d-instant) var(--e-out);
+}
+
+.landing__reroll:hover {
+  background: rgb(251 247 240 / 0.2);
+  box-shadow: inset 0 0 0 1.5px var(--cream);
+}
+
+.landing__reroll svg {
+  color: var(--amber);
+}
+
+/* Mode cards -------------------------------------------------------------- */
+
+.landing__modes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(8px, calc(var(--fit) * 1.2), var(--s-3));
+  width: 100%;
+}
+
+.mode {
+  position: relative;
+  display: grid;
+  justify-items: start;
+  align-content: start;
+  gap: clamp(2px, calc(var(--fit) * 0.7), var(--s-2));
+  padding: clamp(12px, calc(var(--fit) * 2.2), var(--s-5));
+  border-radius: var(--radius);
+  background: var(--cream);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition:
+    transform var(--d-quick) var(--e-back),
+    box-shadow var(--d-quick) var(--e-out);
+}
+
+.mode:hover:not(:disabled) {
+  transform: translateY(-5px);
+  box-shadow: 0 28px 52px -20px rgb(8 10 18 / 0.75);
+}
+
+.mode:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.mode__bolt {
+  position: absolute;
+  top: var(--s-4);
+  right: var(--s-4);
+  opacity: 0.85;
+}
+
+.mode__title {
+  font-size: clamp(1.15rem, calc(var(--fit) * 2), 1.85rem);
+  color: var(--ink);
+  line-height: 0.95;
+}
+
+.mode__blurb {
+  font-size: clamp(0.75rem, calc(var(--fit) * 0.95), 0.9rem);
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--ink);
+  opacity: 0.62;
+}
+
+/* Join by code ------------------------------------------------------------ */
+
+.landing__join {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-3);
+}
+
+.landing__join .label {
+  color: var(--cream);
+  opacity: 0.7;
+}
+
+.field {
+  width: 11ch;
+  min-height: 50px;
+  padding: 0 var(--s-3);
+  border-radius: var(--radius-pill);
+  border: none;
+  background: rgb(251 247 240 / 0.12);
+  box-shadow: inset 0 0 0 1.5px rgb(251 247 240 / 0.3);
+  color: var(--cream);
+  font-family: var(--font-ui);
+  font-size: var(--t-ui);
+  letter-spacing: 0.16em;
+  text-align: center;
+  text-transform: uppercase;
+  transition: box-shadow var(--d-instant) var(--e-out);
+}
+
+.field::placeholder {
+  color: var(--cream);
+  opacity: 0.35;
+}
+
+.field:hover,
+.field:focus {
+  box-shadow: inset 0 0 0 1.5px var(--cream);
+}
+
+/* Difficulty switch ------------------------------------------------------- */
+
+.levels {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  background: rgb(251 247 240 / 0.12);
+  box-shadow: inset 0 0 0 1.5px rgb(251 247 240 / 0.22);
+  gap: 4px;
+}
+
+.level {
+  padding: var(--s-2) var(--s-4);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cream);
+  opacity: 0.7;
+  cursor: pointer;
+  transition:
+    background-color var(--d-instant) var(--e-out),
+    color var(--d-instant) var(--e-out),
+    opacity var(--d-instant) var(--e-out);
+}
+
+.level:hover {
+  opacity: 1;
+}
+
+.level[aria-checked='true'] {
+  background: var(--cream);
+  color: var(--ink);
+  opacity: 1;
+}
+
+/* Share panel ------------------------------------------------------------- */
+
+.share {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-3);
+}
+
+.share__link {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--cream);
+  background: rgb(251 247 240 / 0.12);
+  box-shadow: inset 0 0 0 1.5px rgb(251 247 240 / 0.25);
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--radius-pill);
+  overflow-wrap: anywhere;
+}
+
+.share__code {
+  color: var(--cream);
+  opacity: 0.75;
+}
+
+.share__code strong {
+  color: var(--amber);
+  opacity: 1;
+}
+
+/* Notices ----------------------------------------------------------------- */
+
+.notice {
+  display: grid;
+  justify-items: center;
+  align-content: safe center;
+  gap: var(--s-5);
+  text-align: center;
+  max-width: 34rem;
+  margin-inline: auto;
+  padding-block: var(--s-4);
+  overflow-y: auto;
+}
+
+.notice .display {
+  color: var(--cream);
+}
+
+.notice__lead {
+  color: var(--cream);
+  opacity: 0.75;
+}
+
+/* Connection beat --------------------------------------------------------- */
+
+.connect-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.connect-flash span {
+  width: 180px;
+  height: 180px;
+  border-radius: 999px;
+  border: 6px solid var(--turquoise);
+}
+
+/* Small screens ----------------------------------------------------------- */
+
+@media (max-width: 767px) {
+  .landing__modes {
+    grid-template-columns: 1fr;
+    gap: var(--s-2);
+  }
+
+  /* There is no room beside the avatar at this width, and overlapping it hid
+     the face entirely — so the bubble drops back into the flow above it. */
+  .landing__bubble {
+    position: static;
+    order: -1;
+  }
+
+  .mode {
+    padding: var(--s-4);
+  }
+
+  .mode__title {
+    font-size: 1.4rem;
+  }
+}
+
+/* A create/join failure the player must actually be able to read. */
+.landing__error {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  max-width: 46ch;
+  padding: var(--s-3) var(--s-5);
+  border-radius: var(--radius-pill);
+  background: var(--coral);
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: left;
+  box-shadow: var(--shadow-pill);
+}
+
+.landing__error svg {
+  flex: none;
+}

@@ -1,0 +1,174 @@
+/* Pills ------------------------------------------------------------------- */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: 50px;
+  padding: 0 var(--s-6);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-ui);
+  font-size: var(--t-ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  will-change: transform;
+  box-shadow: var(--shadow-pill);
+  transition:
+    background-color var(--d-instant) var(--e-out),
+    color var(--d-instant) var(--e-out),
+    box-shadow var(--d-instant) var(--e-out),
+    opacity var(--d-instant) var(--e-out);
+}
+
+.pill--full {
+  width: 100%;
+}
+
+.pill--cream {
+  background: var(--cream);
+  color: var(--ink);
+}
+
+.pill--cream:hover:not(:disabled) {
+  background: var(--white, #fff);
+  box-shadow: 0 16px 32px -12px rgb(8 10 18 / 0.7);
+}
+
+.pill--accent {
+  background: var(--coral);
+  color: var(--ink);
+}
+
+.pill--accent:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.pill--outline {
+  background: transparent;
+  color: var(--cream);
+  box-shadow: inset 0 0 0 2px rgb(251 247 240 / 0.45);
+}
+
+.pill--outline:hover:not(:disabled) {
+  box-shadow: inset 0 0 0 2px var(--cream);
+  background: rgb(251 247 240 / 0.08);
+}
+
+.pill:disabled {
+  opacity: 0.45;
+  cursor: default;
+  box-shadow: none;
+}
+
+.pill__bolt {
+  flex: none;
+  color: var(--coral);
+}
+
+.pill--accent .pill__bolt,
+.pill--outline .pill__bolt {
+  color: currentColor;
+}
+
+/* Speech bubbles ---------------------------------------------------------- */
+
+.bubble {
+  position: relative;
+  display: inline-block;
+  max-width: 22ch;
+  padding: var(--s-3) var(--s-4);
+  border-radius: 14px;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.3;
+  box-shadow: var(--shadow-pill);
+  will-change: transform, opacity;
+}
+
+.bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -9px;
+  width: 0;
+  height: 0;
+  border: 10px solid transparent;
+  border-top-color: var(--cream);
+  border-bottom: 0;
+}
+
+.bubble--left::after {
+  right: 22px;
+}
+
+.bubble--right::after {
+  left: 22px;
+}
+
+/* Split headline ---------------------------------------------------------- */
+
+.split {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+  z-index: 1;
+  padding-inline: clamp(var(--s-2), 2vw, var(--s-6));
+}
+
+.split__left,
+.split__right {
+  color: var(--cream);
+  opacity: 0.9;
+  will-change: transform, opacity;
+}
+
+.split__left {
+  rotate: -6deg;
+}
+
+.split__right {
+  rotate: 5deg;
+}
+
+/* Hide the flanking words once there is no room beside the board. */
+@media (max-width: 899px) {
+  .split {
+    display: none;
+  }
+}
+
+/* Burst + bolts ----------------------------------------------------------- */
+
+.burst {
+  position: absolute;
+  width: min(56vmin, 350px);
+  height: min(56vmin, 350px);
+  will-change: transform, opacity;
+}
+
+.boltfield {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.boltfield__bolt {
+  position: absolute;
+  opacity: 0.35;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .burst {
+    animation: none;
+  }
+}

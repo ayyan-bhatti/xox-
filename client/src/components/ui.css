@@ -1,0 +1,154 @@
+/* Shell -------------------------------------------------------------------- */
+
+.shell {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  padding: var(--s-4) clamp(var(--s-4), 3vw, var(--s-6));
+  padding-bottom: max(var(--s-4), env(safe-area-inset-bottom));
+  gap: var(--s-2);
+}
+
+.shell__body {
+  display: grid;
+  min-height: 0;
+}
+
+/* Header ------------------------------------------------------------------- */
+
+/* Positioned on purpose: `.stage` is a fixed, z-index:0 element rendered inside
+   the shell, and a positioned descendant paints above non-positioned in-flow
+   content no matter how early that content appears. Without this the header is
+   painted over by the backdrop and simply never appears. */
+.header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+}
+
+.header__brand {
+  font-family: var(--font-ui);
+  font-size: 1.4rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--cream);
+  opacity: 0.85;
+  text-decoration: none;
+  transition: opacity var(--d-instant) var(--e-out);
+}
+
+.header__brand:hover {
+  opacity: 1;
+}
+
+/* Sound toggle: three bars. */
+.soundbtn {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+}
+
+.soundbtn__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 18px;
+}
+
+.soundbtn__bars i {
+  width: 4px;
+  height: 6px;
+  border-radius: 2px;
+  background: var(--cream);
+  opacity: 0.45;
+  transition:
+    height var(--d-quick) var(--e-out),
+    opacity var(--d-quick) var(--e-out),
+    background-color var(--d-quick) var(--e-out);
+}
+
+.soundbtn__bars[data-on] i {
+  opacity: 1;
+  background: var(--amber);
+  animation: eq 900ms var(--e-inout) infinite alternate;
+}
+
+.soundbtn__bars[data-on] i:nth-child(2) {
+  animation-delay: 150ms;
+}
+
+.soundbtn__bars[data-on] i:nth-child(3) {
+  animation-delay: 300ms;
+}
+
+@keyframes eq {
+  to {
+    height: 18px;
+  }
+}
+
+/* Custom cursor ------------------------------------------------------------ */
+
+.cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 90;
+  pointer-events: none;
+  border-radius: 999px;
+  opacity: 0;
+}
+
+.cursor--ring {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--cream);
+  transition: border-color var(--d-instant) var(--e-out);
+}
+
+.cursor--ring[data-mode='play'] {
+  border-color: var(--amber);
+}
+
+.cursor--dot {
+  width: 8px;
+  height: 8px;
+  background: var(--cream);
+}
+
+/* Toast -------------------------------------------------------------------- */
+
+.toast-slot {
+  position: fixed;
+  left: 50%;
+  bottom: max(var(--s-6), env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 80;
+  pointer-events: none;
+}
+
+.toast {
+  padding: var(--s-3) var(--s-5);
+  border-radius: var(--radius-pill);
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  box-shadow: var(--shadow-pill);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .soundbtn__bars[data-on] i {
+    animation: none;
+    height: 14px;
+  }
+}

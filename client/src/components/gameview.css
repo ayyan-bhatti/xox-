@@ -1,0 +1,54 @@
+.gameview {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: var(--s-4);
+  height: 100%;
+  min-height: 0;
+}
+
+.gameview__top {
+  display: flex;
+  justify-content: center;
+}
+
+.gameview__stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+}
+
+.gameview__boardwrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+  z-index: 2;
+}
+
+.gameview__bubble {
+  position: absolute;
+  top: 2%;
+  left: 50%;
+  transform: translateX(-58%);
+  z-index: 3;
+}
+
+.gameview__foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+}
+
+@media (max-width: 639px) {
+  .gameview__bubble {
+    top: -2%;
+    transform: translateX(-50%);
+  }
+}

@@ -1,0 +1,98 @@
+.result {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: var(--s-5);
+  padding: var(--s-6);
+  text-align: center;
+  background: var(--stage);
+  transition: background-color var(--d-stage) var(--e-smooth);
+}
+
+.result__eyebrow {
+  position: absolute;
+  top: var(--s-5);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.result__stack {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(86vw, 620px);
+  aspect-ratio: 1.5;
+}
+
+/* The word sits behind the burst and the face, exactly as the reference stacks
+   "NOPE" behind the avatar — which only works if it is comfortably WIDER than
+   the burst, otherwise the burst eats it and only the outer letters show. */
+.result__word {
+  position: absolute;
+  color: var(--cream);
+  opacity: 0.92;
+  white-space: nowrap;
+  z-index: 0;
+  font-size: clamp(5rem, 24vw, 16rem);
+}
+
+.result .burst {
+  z-index: 1;
+}
+
+.result__face {
+  position: relative;
+  z-index: 2;
+  width: min(38vmin, 215px);
+  height: min(38vmin, 215px);
+  filter: drop-shadow(0 12px 14px rgb(5 15 26 / 0.25));
+}
+
+.result__quip {
+  color: var(--cream);
+  opacity: 0.8;
+  max-width: 30ch;
+  font-weight: 500;
+}
+
+.result__score {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-4);
+  border-radius: var(--radius-pill);
+  background: var(--cream);
+  color: var(--ink);
+  box-shadow: var(--shadow-pill);
+}
+
+/* Identity chips, so the two tallies stay readable on any stage colour. */
+.result__chip {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding-inline: 6px;
+  border-radius: var(--radius-pill);
+  color: var(--ink);
+}
+
+.result__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  justify-content: center;
+}
+
+@media (max-width: 639px) {
+  .result {
+    gap: var(--s-4);
+  }
+
+  .result__stack {
+    aspect-ratio: 1.15;
+  }
+}

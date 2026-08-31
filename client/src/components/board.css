@@ -1,0 +1,138 @@
+/* The whole board carries a small rotation, redrawn per round — the reference
+   never sets its grid perfectly square to the viewport. */
+.board {
+  position: relative;
+  height: min(72vmin, 520px);
+  width: auto;
+  aspect-ratio: 1;
+  max-height: 100%;
+  max-width: 100%;
+  flex-shrink: 1;
+  margin-inline: auto;
+  rotate: var(--tilt, -2deg);
+  transition: rotate var(--d-slow) var(--e-smooth);
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .board {
+    height: min(72vmin, 460px);
+  }
+}
+
+/* Portrait phones: vmin is the (narrow) width, so 72vmin leaves the board
+   marooned in a tall viewport. Fill more of it. */
+@media (max-width: 639px) {
+  .board {
+    height: min(88vmin, 520px);
+  }
+}
+
+.board__ink,
+.board__marks,
+.board__cells {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.board__ink {
+  overflow: visible;
+  pointer-events: none;
+}
+
+.board__grid path {
+  fill: var(--cream);
+}
+
+.board__win {
+  fill: var(--amber);
+  filter: drop-shadow(0 4px 10px rgb(8 10 18 / 0.45));
+}
+
+.board__marks,
+.board__cells {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+}
+
+.board__marks {
+  pointer-events: none;
+}
+
+.board__face,
+.board__ghost {
+  display: grid;
+  place-items: center;
+  padding: 3%;
+  will-change: transform, opacity;
+}
+
+.board__face svg,
+.board__ghost svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(var(--shadow-face));
+}
+
+.board__ghost {
+  filter: saturate(0.55);
+}
+
+/* Waiting on the server to confirm a move. */
+.board__pending {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.board__pending span {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--cream);
+  opacity: 0.4;
+  animation: pending-bounce 900ms var(--e-inout) infinite alternate;
+}
+
+.board__pending span:nth-child(2) {
+  animation-delay: 120ms;
+}
+
+.board__pending span:nth-child(3) {
+  animation-delay: 240ms;
+}
+
+@keyframes pending-bounce {
+  to {
+    opacity: 1;
+    transform: translateY(-6px);
+  }
+}
+
+.board__cell {
+  background: transparent;
+  border: none;
+  border-radius: 12%;
+  min-width: 44px;
+  min-height: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.board__cell[aria-disabled='true'] {
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board {
+    transition: none;
+  }
+
+  .board__pending span {
+    animation: none;
+    opacity: 0.8;
+  }
+}
