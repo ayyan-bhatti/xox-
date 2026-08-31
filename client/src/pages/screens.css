@@ -100,17 +100,51 @@
   gap: clamp(6px, calc(var(--fit) * 1.2), var(--s-3));
 }
 
+/* Wraps the face only, so the bubble can be hung off the face's own box and
+   the face itself stays on the page's centre line. */
+.landing__facewrap {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: var(--s-2);
+}
+
 .landing__face {
   width: clamp(68px, calc(var(--fit) * 12), 132px);
   height: clamp(68px, calc(var(--fit) * 12), 132px);
   filter: drop-shadow(var(--shadow-face));
 }
 
+/* Narrow screens: stacked above the face. */
 .landing__bubble {
-  position: absolute;
-  top: -10px;
-  right: -20%;
+  position: static;
   z-index: 2;
+}
+
+/* Once there is room, the bubble sits BESIDE the character rather than over it.
+   Overlapping it hid the very thing the button below is asking you to choose. */
+@media (min-width: 560px) {
+  .landing__bubble {
+    position: absolute;
+    top: 50%;
+    right: calc(100% + 16px);
+    transform: translateY(-50%);
+    white-space: nowrap;
+    max-width: none;
+  }
+
+  /* Re-point the tail sideways, at the face. The base bubble's tail points
+     down; this needs the extra class to outrank `.bubble--left::after`. */
+  .landing__facewrap .landing__bubble::after {
+    top: 50%;
+    bottom: auto;
+    left: auto;
+    right: -10px;
+    transform: translateY(-50%);
+    border: 10px solid transparent;
+    border-left-color: var(--cream);
+    border-right: 0;
+  }
 }
 
 .landing__reroll {
@@ -352,13 +386,6 @@
   .landing__modes {
     grid-template-columns: 1fr;
     gap: var(--s-2);
-  }
-
-  /* There is no room beside the avatar at this width, and overlapping it hid
-     the face entirely — so the bubble drops back into the flow above it. */
-  .landing__bubble {
-    position: static;
-    order: -1;
   }
 
   .mode {

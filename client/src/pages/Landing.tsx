@@ -61,9 +61,11 @@ export default function Landing() {
           <p className="lead landing__tagline">Three in a row. Three ways to play.</p>
 
           <div className="landing__hero">
-            <Bubble className="landing__bubble">Pick your poison</Bubble>
-            <div className="landing__face">
-              <Face seed={seed} rim={RIM.one} mood="smug" size="100%" />
+            <div className="landing__facewrap">
+              <Bubble className="landing__bubble">Pick your poison</Bubble>
+              <div className="landing__face">
+                <Face seed={seed} rim={RIM.one} mood="smug" size="100%" />
+              </div>
             </div>
             <button
               type="button"
