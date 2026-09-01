@@ -85,9 +85,9 @@
   margin-top: calc(var(--s-2) * -1);
 }
 
-/* Under ~640px of height there is no room for a subtitle as well as three
-   cards; the cards are the thing people came for. */
-@media (max-height: 640px) {
+/* On a short window there is no room for a subtitle as well as three cards;
+   the cards are the thing people came for. */
+@media (max-height: 720px) {
   .landing__tagline {
     display: none;
   }
@@ -183,9 +183,17 @@
 .mode {
   position: relative;
   display: grid;
+  /* The bolt sits in its own column rather than floating on top. It used to be
+     absolutely positioned, which meant a one-line title ran straight underneath
+     it — "SAME DEVICE" collided with the icon at every width. */
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "title bolt"
+    "blurb blurb";
   justify-items: start;
   align-content: start;
-  gap: clamp(2px, calc(var(--fit) * 0.7), var(--s-2));
+  column-gap: var(--s-3);
+  row-gap: clamp(2px, calc(var(--fit) * 0.7), var(--s-2));
   padding: clamp(12px, calc(var(--fit) * 2.2), var(--s-5));
   border-radius: var(--radius);
   background: var(--cream);
@@ -209,19 +217,21 @@
 }
 
 .mode__bolt {
-  position: absolute;
-  top: var(--s-4);
-  right: var(--s-4);
+  grid-area: bolt;
+  align-self: start;
+  margin-top: 2px;
   opacity: 0.85;
 }
 
 .mode__title {
+  grid-area: title;
   font-size: clamp(1.15rem, calc(var(--fit) * 2), 1.85rem);
   color: var(--ink);
   line-height: 0.95;
 }
 
 .mode__blurb {
+  grid-area: blurb;
   font-size: clamp(0.75rem, calc(var(--fit) * 0.95), 0.9rem);
   font-weight: 500;
   line-height: 1.35;
