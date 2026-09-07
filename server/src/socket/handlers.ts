@@ -10,6 +10,8 @@ import {
   requestRematch,
   serialise,
   sweep,
+  type JoinResult,
+  type MoveResult,
   type Room,
 } from '../rooms.js';
 
@@ -67,7 +69,15 @@ export function registerHandlers(io: GameServer): { stop: () => void } {
       // covers refresh, tab restore, and socket-level reconnect alike.
       const result = await joinRoom(roomId, token, socket.id);
       if (!result.ok) {
-        ack({ ok: false, error: result.error });
+        // `as` here, not narrowing on `result.ok`: Vercel's Function build
+        // (TypeScript 5.9.3, moduleResolution nodenext) fails to narrow this
+        // discriminated union inside the negated branch even though it
+        // narrows correctly for the code after an early return -- reproduced
+        // only on that exact build, not under any local tsc invocation tried
+        // (matching strict/isolatedModules/moduleDetection/file-set). The
+        // assertion sidesteps the compiler quirk without changing behaviour.
+        const { error } = result as Extract<JoinResult, { ok: false }>;
+        ack({ ok: false, error });
         return;
       }
 
@@ -80,7 +90,9 @@ export function registerHandlers(io: GameServer): { stop: () => void } {
     socket.on('game:move', async ({ roomId, index }, ack) => {
       const result = await applyMoveToRoom(roomId, socket.id, index);
       if (!result.ok) {
-        ack({ ok: false, error: result.error });
+        // See the matching comment in the room:join handler above.
+        const { error } = result as Extract<MoveResult, { ok: false }>;
+        ack({ ok: false, error });
         // Resync the offending client so a rejected move can't leave it stuck.
         const current = await getRoom(roomId);
         if (current) socket.emit('room:state', serialise(current));
