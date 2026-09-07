@@ -14,7 +14,7 @@
  * second player's "join" would hit an instance that has never heard of the
  * room the first player created.
  */
-import { createTrioServer } from '../server/src/server';
+import { createTrioServer } from '../server/src/server.js';
 
 const redisUrl = process.env.REDIS_URL ?? process.env.KV_URL ?? process.env.UPSTASH_REDIS_URL;
 

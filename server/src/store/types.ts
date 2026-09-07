@@ -1,4 +1,4 @@
-import type { Board, Mark, Outcome } from '../../../shared/game';
+import type { Board, Mark, Outcome } from '../../../shared/game.js';
 
 /** How long a dropped player keeps their seat. */
 export const GRACE_MS = 2 * 60 * 1000;

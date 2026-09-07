@@ -6,10 +6,10 @@ import express from 'express';
 import { Server } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { Redis } from 'ioredis';
-import { configureRoomStore, roomCount } from './rooms';
-import { createMemoryStore } from './store/memoryStore';
-import { createRedisStore } from './store/redisStore';
-import { registerHandlers, type GameServer } from './socket/handlers';
+import { configureRoomStore, roomCount } from './rooms.js';
+import { createMemoryStore } from './store/memoryStore.js';
+import { createRedisStore } from './store/redisStore.js';
+import { registerHandlers, type GameServer } from './socket/handlers.js';
 
 export interface TrioServer {
   http: HttpServer;

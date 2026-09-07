@@ -1,8 +1,8 @@
-import type { Mark } from '../../shared/game';
-import type { Seat } from '../../shared/protocol';
-import { createMemoryStore } from './store/memoryStore';
-import * as logic from './store/roomLogic';
-import { EMPTY_TTL_MS, GRACE_MS, IDLE_TTL_MS, type Room, type RoomStore } from './store/types';
+import type { Mark } from '../../shared/game.js';
+import type { Seat } from '../../shared/protocol.js';
+import { createMemoryStore } from './store/memoryStore.js';
+import * as logic from './store/roomLogic.js';
+import { EMPTY_TTL_MS, GRACE_MS, IDLE_TTL_MS, type Room, type RoomStore } from './store/types.js';
 
 export { serialise, seatOfSocket } from './store/roomLogic';
 export { EMPTY_TTL_MS, GRACE_MS, IDLE_TTL_MS };

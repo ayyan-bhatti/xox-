@@ -1,5 +1,5 @@
 import type { DefaultEventsMap, Server } from 'socket.io';
-import type { ClientToServerEvents, ServerToClientEvents } from '../../../shared/protocol';
+import type { ClientToServerEvents, ServerToClientEvents } from '../../../shared/protocol.js';
 import {
   applyMoveToRoom,
   createRoom,
@@ -11,7 +11,7 @@ import {
   serialise,
   sweep,
   type Room,
-} from '../rooms';
+} from '../rooms.js';
 
 /** Per-socket bookkeeping. A socket is in at most one room at a time in this
  * app, so remembering it here is enough to scope disconnect/error handling to

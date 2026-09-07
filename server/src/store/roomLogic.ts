@@ -6,9 +6,9 @@ import {
   isLegalMove,
   other,
   type Mark,
-} from '../../../shared/game';
-import type { RoomState, Seat } from '../../../shared/protocol';
-import { EMPTY_TTL_MS, GRACE_MS, IDLE_TTL_MS, type Room, type SeatHolder } from './types';
+} from '../../../shared/game.js';
+import type { RoomState, Seat } from '../../../shared/protocol.js';
+import { EMPTY_TTL_MS, GRACE_MS, IDLE_TTL_MS, type Room, type SeatHolder } from './types.js';
 
 /**
  * Pure game-rule functions: given a `Room` value (and sometimes some inputs),

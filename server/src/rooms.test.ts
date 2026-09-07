@@ -14,7 +14,7 @@ import {
   roomCount,
   serialise,
   sweep,
-} from './rooms';
+} from './rooms.js';
 
 const A = 'token-aaaaaaaaaa';
 const B = 'token-bbbbbbbbbb';

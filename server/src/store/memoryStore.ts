@@ -1,4 +1,4 @@
-import type { Room, RoomStore } from './types';
+import type { Room, RoomStore } from './types.js';
 
 /**
  * In-process Map. Safe with no locking because every mutator passed to

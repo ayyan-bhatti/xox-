@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import type { Redis } from 'ioredis';
-import type { Room, RoomStore } from './types';
+import type { Room, RoomStore } from './types.js';
 
 /**
  * Redis-backed store, for deployments where a room's two players can have

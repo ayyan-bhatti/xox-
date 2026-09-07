@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { after, before, beforeEach, describe, it } from 'node:test';
 import { io as connect, type Socket } from 'socket.io-client';
-import type { RoomState, Seat } from '../../../shared/protocol';
-import { getRoom, GRACE_MS, joinRoom, resetRooms, sweep } from '../rooms';
-import { createTrioServer, type TrioServer } from '../server';
+import type { RoomState, Seat } from '../../../shared/protocol.js';
+import { getRoom, GRACE_MS, joinRoom, resetRooms, sweep } from '../rooms.js';
+import { createTrioServer, type TrioServer } from '../server.js';
 
 /**
  * Integration tests: a real Socket.IO server on an ephemeral port with real

@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { Redis } from 'ioredis';
 import RedisMock from 'ioredis-mock';
-import { createMemoryStore } from './memoryStore';
-import { createRedisStore } from './redisStore';
+import { createMemoryStore } from './memoryStore.js';
+import { createRedisStore } from './redisStore.js';
 import {
   buildRoom,
   decideJoin,
@@ -11,8 +11,8 @@ import {
   decideNextRound,
   decideRematchRequest,
   type JoinDecision,
-} from './roomLogic';
-import type { Room, RoomStore } from './types';
+} from './roomLogic.js';
+import type { Room, RoomStore } from './types.js';
 
 /**
  * The same behavioural contract, run against BOTH backends. The one case that

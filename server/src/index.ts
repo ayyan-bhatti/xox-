@@ -1,4 +1,4 @@
-import { createTrioServer } from './server';
+import { createTrioServer } from './server.js';
 
 /** Process entry point. All behaviour lives in server.ts / socket/handlers.ts. */
 
