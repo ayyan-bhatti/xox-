@@ -1,4 +1,4 @@
-import type { Server } from 'socket.io';
+import type { DefaultEventsMap, Server } from 'socket.io';
 import type { ClientToServerEvents, ServerToClientEvents } from '../../../shared/protocol';
 import {
   applyMoveToRoom,
@@ -8,14 +8,19 @@ import {
   markAbsent,
   releaseSeat,
   requestRematch,
-  roomsForSocket,
   serialise,
-  startNextRound,
   sweep,
   type Room,
 } from '../rooms';
 
-export type GameServer = Server<ClientToServerEvents, ServerToClientEvents>;
+/** Per-socket bookkeeping. A socket is in at most one room at a time in this
+ * app, so remembering it here is enough to scope disconnect/error handling to
+ * that one room instead of asking the store to scan every room for a match. */
+interface SocketData {
+  roomId?: string;
+}
+
+export type GameServer = Server<ClientToServerEvents, ServerToClientEvents, DefaultEventsMap, SocketData>;
 
 export const SWEEP_INTERVAL_MS = 15_000;
 
@@ -28,6 +33,12 @@ export const SWEEP_INTERVAL_MS = 15_000;
  * changes until this file has validated it. Every rejection path answers the
  * acknowledgement with a typed error, because a silent no-op leaves the UI
  * stuck with no way to explain itself.
+ *
+ * Every room mutation goes through exactly one atomic call into rooms.ts
+ * (fetch, decide, and write happen together on the store side) -- this file
+ * never fetches a room and hands it back into a second call to be mutated,
+ * because on the Redis-backed store that gap is a real race window between
+ * two different server instances.
  */
 export function registerHandlers(io: GameServer): { stop: () => void } {
   const broadcastState = (room: Room) => {
@@ -35,17 +46,18 @@ export function registerHandlers(io: GameServer): { stop: () => void } {
   };
 
   io.on('connection', (socket) => {
-    socket.on('room:create', ({ token }, ack) => {
+    socket.on('room:create', async ({ token }, ack) => {
       if (typeof token !== 'string' || token.length < 8) {
         ack({ ok: false, error: 'bad-token' });
         return;
       }
-      const room = createRoom(token, socket.id);
+      const room = await createRoom(token, socket.id);
+      socket.data.roomId = room.id;
       void socket.join(room.id);
       ack({ ok: true, state: serialise(room), seat: 'X' });
     });
 
-    socket.on('room:join', ({ roomId, token }, ack) => {
+    socket.on('room:join', async ({ roomId, token }, ack) => {
       if (typeof roomId !== 'string' || typeof token !== 'string' || token.length < 8) {
         ack({ ok: false, error: 'room-not-found' });
         return;
@@ -53,81 +65,83 @@ export function registerHandlers(io: GameServer): { stop: () => void } {
 
       // Presenting a token that already holds a seat reclaims it; that one rule
       // covers refresh, tab restore, and socket-level reconnect alike.
-      const result = joinRoom(roomId, token, socket.id);
+      const result = await joinRoom(roomId, token, socket.id);
       if (!result.ok) {
         ack({ ok: false, error: result.error });
         return;
       }
 
+      socket.data.roomId = result.room.id;
       void socket.join(result.room.id);
       ack({ ok: true, state: serialise(result.room), seat: result.seat });
       broadcastState(result.room);
     });
 
-    socket.on('game:move', ({ roomId, index }, ack) => {
-      const room = getRoom(roomId);
-      if (!room) {
-        ack({ ok: false, error: 'room-not-found' });
-        return;
-      }
-
-      const result = applyMoveToRoom(room, socket.id, index);
+    socket.on('game:move', async ({ roomId, index }, ack) => {
+      const result = await applyMoveToRoom(roomId, socket.id, index);
       if (!result.ok) {
         ack({ ok: false, error: result.error });
         // Resync the offending client so a rejected move can't leave it stuck.
-        socket.emit('room:state', serialise(room));
+        const current = await getRoom(roomId);
+        if (current) socket.emit('room:state', serialise(current));
         return;
       }
 
       ack({ ok: true });
-      io.to(room.id).emit('game:move', { index, mark: result.mark, state: serialise(room) });
+      io.to(result.room.id).emit('game:move', { index, mark: result.mark, state: serialise(result.room) });
     });
 
-    socket.on('game:rematch', ({ roomId }) => {
-      const room = getRoom(roomId);
-      if (!room) return;
+    socket.on('game:rematch', async ({ roomId }) => {
+      const bothAgreed = await requestRematch(roomId, socket.id);
+      const current = await getRoom(roomId);
+      if (!current) return;
 
-      const bothAgreed = requestRematch(room, socket.id);
       if (!bothAgreed) {
-        broadcastState(room);
+        broadcastState(current);
         return;
       }
 
-      startNextRound(room);
-      const state = serialise(room);
-
+      const state = serialise(current);
       // Seats swap on a rematch, so each client is told its new seat directly.
       for (const seat of ['X', 'O'] as const) {
-        const holderSocketId = room.seats[seat]?.socketId;
+        const holderSocketId = current.seats[seat]?.socketId;
         if (!holderSocketId) continue;
         io.to(holderSocketId).emit('game:reset', { state, yourSeat: seat });
       }
     });
 
-    socket.on('room:leave', ({ roomId }) => {
-      const room = getRoom(roomId);
-      if (!room) return;
-      if (releaseSeat(room, socket.id) === null) return;
-      void socket.leave(room.id);
-      broadcastState(room);
+    socket.on('room:leave', async ({ roomId }) => {
+      const result = await releaseSeat(roomId, socket.id);
+      if (!result) return;
+      socket.data.roomId = undefined;
+      void socket.leave(result.room.id);
+      broadcastState(result.room);
     });
 
-    socket.on('disconnect', () => {
-      // The seat is held, not freed — see GRACE_MS in rooms.ts.
-      for (const room of markAbsent(socket.id)) broadcastState(room);
+    socket.on('disconnect', async () => {
+      // The seat is held, not freed -- see GRACE_MS in rooms.ts.
+      const roomId = socket.data.roomId;
+      if (!roomId) return;
+      const room = await markAbsent(roomId, socket.id);
+      if (room) broadcastState(room);
     });
 
-    // Defensive: a socket that never joined anything still gets cleaned up above.
-    socket.on('error', () => {
-      for (const room of roomsForSocket(socket.id)) broadcastState(room);
+    // Defensive: resync whatever room this socket was in, if any.
+    socket.on('error', async () => {
+      const roomId = socket.data.roomId;
+      if (!roomId) return;
+      const room = await getRoom(roomId);
+      if (room) broadcastState(room);
     });
   });
 
   const sweeper = setInterval(() => {
-    for (const { id, reason } of sweep()) {
-      io.to(id).emit('room:closed', { reason });
-      io.socketsLeave(id);
-    }
+    void (async () => {
+      for (const { id, reason } of await sweep()) {
+        io.to(id).emit('room:closed', { reason });
+        io.socketsLeave(id);
+      }
+    })();
   }, SWEEP_INTERVAL_MS);
   sweeper.unref?.();
 

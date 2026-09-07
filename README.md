@@ -268,6 +268,84 @@ matters more than the free price, Render's paid Starter plan (~$7/mo) or
 Railway/Fly.io (both paid-only now, a few dollars a month) remove the sleep
 entirely — same `render.yaml` shape, different host.
 
+### Play with anyone, anywhere — deploy to Vercel
+
+Vercel added real WebSocket / Socket.IO support in mid-2026, via Fluid compute
+— the render.yaml write-up above was correct as of when it was written, but
+that changed since. It comes with one catch specific to this app: **a
+WebSocket connection is pinned to whichever Function instance accepted it, and
+two different instances share no memory.** Two players' sockets landing on two
+different instances (the ordinary case in production, not an edge case) means
+one instance would hold a room the other has never heard of. Vercel's own docs
+say the same thing in as many words: *"store durable state... in an external
+data store instead of relying on in-memory variables."*
+
+So this isn't a config toggle — it's the actual architecture change in this
+repo: `server/src/store/` splits the pure game rules (`roomLogic.ts`, unchanged
+either way) from where a room's state actually *lives* (`RoomStore`), with two
+interchangeable backends:
+
+- **`memoryStore.ts`** — a plain `Map`, used by Render and local dev. Correct
+  because Node is single-threaded and every `update()` runs synchronously with
+  no `await` inside it — one call can never interleave with another.
+- **`redisStore.ts`** — used on Vercel. Every `update()` takes a short-lived
+  per-room lock (`SET NX PX`) around a real read-modify-write, so two
+  instances racing on the same room genuinely serialise instead of one
+  silently clobbering the other's write. There's also
+  `@socket.io/redis-adapter` wired in alongside it, for a *different* reason:
+  that fans out Socket.IO's own broadcasts across instances, which the room
+  store alone doesn't do.
+
+This is exercised directly, not just asserted: `store.contract.test.ts` runs
+the identical behavioural suite against both backends, including firing two
+literally-concurrent `Promise.all` join attempts at the same room and checking
+exactly one wins — the one scenario that would silently break without the
+lock. 71/71 server tests pass, 20 of them specifically against a
+protocol-faithful Redis mock.
+
+**Setup — three things need doing:**
+
+1. **Repo access.** `create_git_project` will fail with `repo_no_access`
+   unless the Vercel account you're deploying from has admin/write access to
+   `ayyan-bhatti/xox-` on GitHub. Fix it at
+   [github.com/apps/vercel](https://github.com/apps/vercel) → **Configure** →
+   grant it access to this repo (or all repos), under whichever GitHub account
+   your Vercel team is linked to. Then create the project: **Add New** →
+   **Project** → import `ayyan-bhatti/xox-`. `vercel.json` in the repo root
+   sets the build command, output directory, and SPA rewrite automatically.
+2. **Redis.** From the new project's dashboard: **Storage** → **Marketplace
+   Database Providers** → **Upstash** → **Redis** (free tier, no card). Once
+   installed, open **Settings → Environment Variables** and confirm the
+   connection string it added is named `REDIS_URL` — `api/socket-io.ts` also
+   checks `KV_URL` and `UPSTASH_REDIS_URL` as fallbacks, since Upstash's exact
+   naming isn't pinned down in its own docs, but if none of those three match
+   what the integration actually created, rename it (or add a copy under
+   `REDIS_URL`) so the function can find it.
+3. **`VITE_SOCKET_PATH`.** This one is easy to miss and the failure is silent:
+   it's a *build-time* client setting (baked into the bundle by `vite build`,
+   not read at runtime), so it has to be a Vercel **Environment Variable**, not
+   just something set for the server. In the same **Environment Variables**
+   screen, add `VITE_SOCKET_PATH` = `/api/socket-io/socket.io` for all
+   environments. Skip this and the deployed client keeps trying the
+   Render/local default (`/socket.io`), which doesn't exist on Vercel — the
+   site loads fine, Same Device and vs Computer work fine, and Online just
+   never connects, with nothing in the UI pointing at *why*.
+
+Redeploy after adding both env vars (Vercel doesn't rebuild retroactively for
+env var changes). Once that's done, the project's own `https://xxxx.vercel.app` URL is the
+shareable link — `/play/ABC123` on it works for anyone, anywhere, no CORS
+config needed (the client and `/api/socket-io` are the same origin).
+
+**The one thing Render doesn't have and this does:** a WebSocket connection on
+Vercel Functions closes when the function hits its max duration — 5 minutes by
+default, 30 on Pro/Enterprise in beta. A game that runs long enough gets force
+-disconnected mid-round. This app's reconnect handling (the same
+token-in-`localStorage` mechanism that survives a refresh or a dropped wifi
+connection) covers it: Socket.IO's client reconnects automatically, presents
+the same token, and the Redis-backed room state is exactly what makes that
+safe to do from a *different* Function instance than the one the game started
+on — the room never lived only in the instance that got recycled.
+
 ### Manual / other hosts
 
 **Two services.** Static-host `client/dist` anywhere; run the server on a
@@ -295,6 +373,8 @@ The SPA fallback is wired, so `/play/ABC123` resolves on a hard refresh.
 | `CLIENT_ORIGIN` | server | Comma-separated allowed origins for CORS (two-service setups only) |
 | `SERVE_CLIENT` | server | `true` to also serve `client/dist` |
 | `VITE_SERVER_URL` | client (build) | Socket server origin when hosted separately |
+| `VITE_SOCKET_PATH` | client (build) | Set to `/api/socket-io/socket.io` for Vercel; unset elsewhere |
+| `REDIS_URL` | server | Switches the room store to Redis. **Required on Vercel**, optional everywhere else |
 
 ---
 

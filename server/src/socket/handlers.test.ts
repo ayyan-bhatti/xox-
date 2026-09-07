@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { after, before, beforeEach, describe, it } from 'node:test';
 import { io as connect, type Socket } from 'socket.io-client';
 import type { RoomState, Seat } from '../../../shared/protocol';
-import { getRoom, GRACE_MS, resetRooms, sweep } from '../rooms';
+import { getRoom, GRACE_MS, joinRoom, resetRooms, sweep } from '../rooms';
 import { createTrioServer, type TrioServer } from '../server';
 
 /**
@@ -38,9 +38,9 @@ function once<T>(socket: Socket, event: string): Promise<T> {
 }
 
 /** Waits until `predicate` holds, polling briefly. Avoids arbitrary sleeps. */
-async function until(predicate: () => boolean, timeoutMs = 2000): Promise<void> {
+async function until(predicate: () => boolean | Promise<boolean>, timeoutMs = 2000): Promise<void> {
   const deadline = Date.now() + timeoutMs;
-  while (!predicate()) {
+  while (!(await predicate())) {
     if (Date.now() > deadline) throw new Error('timed out waiting for condition');
     await new Promise((r) => setTimeout(r, 20));
   }
@@ -311,23 +311,19 @@ describe('edge cases', () => {
     const { roomId, a, b } = await seatedRoom();
     a.close();
     b.close();
-    await until(() => true);
+    // Closing a socket only *starts* the server's disconnect handling -- it
+    // happens asynchronously -- so poll the real room state rather than
+    // assuming any fixed number of ticks is enough for both to land.
+    await until(async () => {
+      const room = await getRoom(roomId);
+      return room !== undefined && !room.seats.X?.socketId && !room.seats.O?.socketId;
+    });
 
-    // Push every timestamp past the grace window and sweep, exactly as the
-    // background janitor does.
-    const room = getRoom(roomId);
-    assert.ok(room);
-    const past = Date.now() - GRACE_MS - 60_000;
-    room.createdAt = past;
-    room.lastActivity = past;
-    for (const seat of ['X', 'O'] as const) {
-      const holder = room.seats[seat];
-      if (holder) {
-        holder.socketId = null;
-        holder.lastSeen = past;
-      }
-    }
-    assert.deepEqual(sweep(), [{ id: roomId, reason: 'empty' }]);
+    // Fast-forward the sweep's own clock rather than forging timestamps on a
+    // fetched room object -- the same trick rooms.test.ts uses, and the only
+    // one that is also correct against the Redis-backed store, where get()
+    // hands back a fresh deserialised object rather than a live reference.
+    assert.deepEqual(await sweep(Date.now() + GRACE_MS + 60_000), [{ id: roomId, reason: 'empty' }]);
 
     const late = await client();
     const res = await emit<CreateAck>(late, 'room:join', { roomId, token: TOKEN_A });
@@ -359,17 +355,21 @@ describe('edge cases', () => {
     const { a, b, roomId } = await seatedRoom();
     b.close();
     let gone = false;
+    // `a` is genuinely in this room (it went through room:create), so it is
+    // actually a member of the Socket.IO room channel and will receive the
+    // broadcast -- an unrelated fresh socket never would be.
     a.on('room:state', (s: RoomState) => {
       if (!s.present.O) gone = true;
     });
     await until(() => gone);
 
-    const room = getRoom(roomId);
-    assert.ok(room);
-    room.seats.O!.lastSeen = Date.now() - GRACE_MS - 1000;
-
-    const stranger = await client();
-    const res = await emit<CreateAck>(stranger, 'room:join', { roomId, token: TOKEN_C });
+    // The real two-minute grace window is not something a test should sit
+    // through, and forging a fetched room's timestamps and hoping the write
+    // sticks is a memory-store-only trick (Redis's get() hands back a fresh
+    // deserialised object every time). joinRoom's own `now` parameter exists
+    // for exactly this: exercise the production function the socket handler
+    // itself calls, with a clock that has genuinely moved past the deadline.
+    const res = await joinRoom(roomId, TOKEN_C, 'stranger-sock', Date.now() + GRACE_MS + 1000);
     assert.ok(res.ok);
     assert.equal(res.seat, 'O');
   });
@@ -394,7 +394,7 @@ describe('edge cases', () => {
     const stranger = await client();
     stranger.emit('game:rematch', { roomId });
     await until(() => true);
-    const room = getRoom(roomId);
+    const room = await getRoom(roomId);
     assert.ok(room);
     assert.equal(room.rematch.X, false);
     assert.equal(room.rematch.O, false);

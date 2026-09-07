@@ -4,7 +4,11 @@ import path from 'node:path';
 import fs from 'node:fs';
 import express from 'express';
 import { Server } from 'socket.io';
-import { roomCount } from './rooms';
+import { createAdapter } from '@socket.io/redis-adapter';
+import { Redis } from 'ioredis';
+import { configureRoomStore, roomCount } from './rooms';
+import { createMemoryStore } from './store/memoryStore';
+import { createRedisStore } from './store/redisStore';
 import { registerHandlers, type GameServer } from './socket/handlers';
 
 export interface TrioServer {
@@ -20,13 +24,27 @@ export interface CreateOptions {
   origins?: string[];
   /** Serve the built client from this server too (single-instance deploys). */
   serveClient?: boolean;
+  /**
+   * Redis connection string. Required whenever this process cannot guarantee
+   * every player's socket lands on the same instance -- i.e. any serverless
+   * deployment (Vercel Functions). Without it, room state lives in this
+   * process's memory only, which is correct and simpler for a single
+   * always-on process (local dev, Render) but silently wrong the moment a
+   * second instance exists: one instance would create a room the other has
+   * never heard of.
+   */
+  redisUrl?: string;
 }
 
 /**
  * Builds the HTTP + Socket.IO server without starting it, so tests can boot an
  * isolated instance on an ephemeral port and shut it down cleanly.
  */
-export function createTrioServer({ origins = [], serveClient = false }: CreateOptions = {}): TrioServer {
+export function createTrioServer({
+  origins = [],
+  serveClient = false,
+  redisUrl,
+}: CreateOptions = {}): TrioServer {
   const app = express();
   const http = createServer(app);
 
@@ -38,8 +56,29 @@ export function createTrioServer({ origins = [], serveClient = false }: CreateOp
     pingTimeout: 10_000,
   });
 
+  let redisClients: Redis[] = [];
+
+  if (redisUrl) {
+    configureRoomStore(createRedisStore(new Redis(redisUrl)));
+
+    // Socket.IO's own room/broadcast primitives (io.to(x).emit) only reach
+    // sockets on THIS process by default. The redis adapter fans those out
+    // over pub/sub so a broadcast from one function instance reaches sockets
+    // accepted by a different one -- this is separate from, and in addition
+    // to, the Redis-backed game-state store above: that store shares the
+    // board/score data, this adapter shares Socket.IO's own delivery.
+    const pubClient = new Redis(redisUrl);
+    const subClient = pubClient.duplicate();
+    io.adapter(createAdapter(pubClient, subClient));
+    redisClients = [pubClient, subClient];
+  } else {
+    configureRoomStore(createMemoryStore());
+  }
+
   app.get('/healthz', (_req, res) => {
-    res.json({ ok: true, rooms: roomCount(), uptime: Math.round(process.uptime()) });
+    void roomCount().then((rooms) => {
+      res.json({ ok: true, rooms, uptime: Math.round(process.uptime()) });
+    });
   });
 
   if (serveClient) {
@@ -69,7 +108,11 @@ export function createTrioServer({ origins = [], serveClient = false }: CreateOp
     close: () =>
       new Promise((resolve) => {
         handlers.stop();
-        io.close(() => http.close(() => resolve()));
+        io.close(() => {
+          Promise.all(redisClients.map((c) => c.quit().catch(() => undefined))).then(() =>
+            http.close(() => resolve()),
+          );
+        });
       }),
   };
 }

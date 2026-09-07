@@ -10,6 +10,16 @@ export type GameSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
  */
 const SERVER_URL = import.meta.env.VITE_SERVER_URL as string | undefined;
 
+/**
+ * A standalone server (Render, local) mounts Socket.IO at the default
+ * `/socket.io` path. On Vercel the realtime layer is a Function at
+ * `/api/socket-io`, and Socket.IO appends its own `/socket.io` suffix to
+ * whatever path you give it — so the full path there is
+ * `/api/socket-io/socket.io`. Set VITE_SOCKET_PATH to that when building for
+ * Vercel; leave it unset everywhere else.
+ */
+const SOCKET_PATH = (import.meta.env.VITE_SOCKET_PATH as string | undefined) || '/socket.io';
+
 let socket: GameSocket | null = null;
 
 export function getSocket(): GameSocket {
@@ -20,7 +30,15 @@ export function getSocket(): GameSocket {
 
 function opts(): Partial<ManagerOptions & SocketOptions> {
   return {
-    transports: ['websocket', 'polling'],
+    path: SOCKET_PATH,
+    // Vercel's own docs are explicit that a Socket.IO client connecting to a
+    // Functions-hosted server MUST set this: "Socket.IO defaults to HTTP
+    // long-polling" otherwise, and a polling connection has no guarantee two
+    // consecutive requests land on the same function instance, which breaks
+    // the handshake. Standalone hosts (Render, local) are just as happy with
+    // websocket-only, so there is no reason to keep the polling fallback
+    // conditional on which server this is talking to.
+    transports: ['websocket'],
     // Socket.io's own backoff covers the "reconnecting" window; the server
     // holds the seat for a grace period that comfortably outlasts it.
     reconnection: true,
