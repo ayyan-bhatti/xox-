@@ -58,6 +58,18 @@
   padding-block: clamp(8px, calc(var(--fit) * 1.6), var(--s-4));
   overflow-y: auto;
   overscroll-behavior: contain;
+  /* Scroll still works as a fallback on a genuinely short window, but a
+     visible scrollbar track on a game's landing screen reads as a layout
+     bug even when nothing is actually cut off -- hide the chrome, keep the
+     capability. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.landing::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .landing__title {
@@ -361,6 +373,14 @@
   margin-inline: auto;
   padding-block: var(--s-4);
   overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.notice::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .notice .display {
