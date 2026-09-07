@@ -123,6 +123,10 @@ discrimination alone). A visually-hidden live region says it in a sentence:
 Create Game → server mints a room code → waiting screen with the link and a copy button
 → opponent joins → play → rematch or leave.
 
+Locally this only connects two tabs on your own machine — see
+[**Deployment**](#deployment) below for making the link work for someone on a
+different network or the other side of the world.
+
 **The server is the only authority.** The client proposes a move and renders nothing
 until the server broadcasts the committed board. Every move is validated against: the
 room exists, this socket holds a seat, both seats are occupied, the game is still
@@ -224,7 +228,49 @@ valid — it is only the refresh that failed.
 
 ## Deployment
 
-**Two services (recommended).** Static-host `client/dist` anywhere; run the server on a
+Everything above runs on `localhost`, which only ever works between two tabs on
+the *same machine*. For two people on different networks — the actual "play a
+friend anywhere via a link" case — the server has to be reachable on the public
+internet. That's the one thing no amount of client code can substitute for:
+Socket.IO needs an origin, and `localhost` isn't reachable from anyone else's
+device.
+
+### Play with anyone, anywhere — deploy to Render (free, no card)
+
+Researched this rather than guessing: **Vercel cannot run this.** Its serverless
+functions don't support WebSocket connections at all — Socket.IO needs one
+long-lived process holding the room state in memory, which is the opposite of
+what serverless gives you. Railway and Fly.io dropped their free tiers and now
+require a card up front. **Render** is the one host that's still genuinely free,
+needs no card, and runs a real persistent Node process — the actual thing this
+app needs.
+
+The repo includes [`render.yaml`](./render.yaml), so this is a few clicks:
+
+1. Go to [render.com](https://render.com) → sign up (no card needed) → **New** → **Blueprint**.
+2. Connect the `ayyan-bhatti/xox-` GitHub repo. Render reads `render.yaml`
+   automatically and fills in the build/start commands and env vars.
+3. Click **Apply**. First build takes a few minutes (it runs `npm install && npm run build`,
+   then starts the server with `SERVE_CLIENT=true`).
+4. You get a URL like `https://trio-xxxx.onrender.com`. **That's the shareable
+   link** — send `https://trio-xxxx.onrender.com/play/ABC123` to anyone,
+   anywhere, and it works, because the client and the socket server are the
+   same origin (verified locally end-to-end: build → start in production mode →
+   two independent browser sessions create a room, join it, and sync moves,
+   with zero CORS config).
+
+**One real tradeoff on the free plan:** it sleeps after 15 minutes with nobody
+visiting, and takes 30–50s to wake back up on the next request — so the very
+first person to open the link after a quiet spell sees "Opening…" for a while
+instead of instantly. The app already handles this correctly (the loading and
+timeout states exist for exactly this reason), it's just not instant. If that
+matters more than the free price, Render's paid Starter plan (~$7/mo) or
+Railway/Fly.io (both paid-only now, a few dollars a month) remove the sleep
+entirely — same `render.yaml` shape, different host.
+
+### Manual / other hosts
+
+**Two services.** Static-host `client/dist` anywhere; run the server on a
 Node host. Set `CLIENT_ORIGIN` on the server to the frontend origin, and
 `VITE_SERVER_URL` at client build time to the server origin.
 
@@ -233,7 +279,8 @@ npm run build
 CLIENT_ORIGIN=https://your-frontend.example npm start
 ```
 
-**One service.** Build the client, then let the server serve it too:
+**One service** (what `render.yaml` does). Build the client, then let the
+server serve it too:
 
 ```bash
 npm run build
@@ -244,8 +291,8 @@ The SPA fallback is wired, so `/play/ABC123` resolves on a hard refresh.
 
 | Env var | Side | Meaning |
 | --- | --- | --- |
-| `PORT` | server | Listen port (default 8787) |
-| `CLIENT_ORIGIN` | server | Comma-separated allowed origins for CORS |
+| `PORT` | server | Listen port (default 8787; Render sets this itself) |
+| `CLIENT_ORIGIN` | server | Comma-separated allowed origins for CORS (two-service setups only) |
 | `SERVE_CLIENT` | server | `true` to also serve `client/dist` |
 | `VITE_SERVER_URL` | client (build) | Socket server origin when hosted separately |
 

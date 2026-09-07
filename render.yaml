@@ -1,0 +1,21 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+#
+# One web service that builds the client and serves it from the same Express
+# process that runs Socket.IO (SERVE_CLIENT=true). Same-origin on purpose:
+# no CORS config, no VITE_SERVER_URL, no second service to pay for or keep in
+# sync. The service's own https://<name>.onrender.com URL IS the shareable
+# link — /play/ABC123 works for anyone, anywhere, once this is live.
+services:
+  - type: web
+    name: trio
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: SERVE_CLIENT
+        value: "true"
