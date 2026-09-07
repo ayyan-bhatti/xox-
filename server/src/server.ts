@@ -34,6 +34,17 @@ export interface CreateOptions {
    * never heard of.
    */
   redisUrl?: string;
+  /**
+   * Socket.IO's own mount path -- must match the client's `path` option
+   * exactly. Left unset, Socket.IO defaults to `/socket.io`, which is fine
+   * for a standalone process (Render, local) reachable at its own origin. A
+   * Vercel Function at `/api/socket-io` needs this set to
+   * `/api/socket-io/socket.io`, because Vercel only routes that literal
+   * prefix (plus the vercel.json rewrite forwarding its sub-paths) to this
+   * function -- the incoming request's path still carries the full prefix,
+   * so Socket.IO has to be told to match on it.
+   */
+  socketPath?: string;
 }
 
 /**
@@ -44,12 +55,14 @@ export function createTrioServer({
   origins = [],
   serveClient = false,
   redisUrl,
+  socketPath,
 }: CreateOptions = {}): TrioServer {
   const app = express();
   const http = createServer(app);
 
   const io: GameServer = new Server(http, {
     cors: origins.length ? { origin: origins, credentials: true } : { origin: true },
+    ...(socketPath ? { path: socketPath } : {}),
     // A dropped move costs a turn, so favour a short heartbeat: the grace window
     // on the room side is what actually gives players time to come back.
     pingInterval: 20_000,

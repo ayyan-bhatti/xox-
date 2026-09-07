@@ -2,6 +2,7 @@
   "name": "trio",
   "private": true,
   "version": "1.0.0",
+  "type": "module",
   "description": "A fast, animated tic-tac-toe: vs AI, local 2-player, and online multiplayer.",
   "workspaces": [
     "client",

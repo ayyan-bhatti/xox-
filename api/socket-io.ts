@@ -1,7 +1,16 @@
 /**
- * Vercel Function entry point for realtime play. Deployed at `/api/socket-io`;
- * Socket.IO appends its own `/socket.io` suffix, so the client connects to
- * `/api/socket-io/socket.io` (see client/src/lib/socket.ts).
+ * Vercel Function entry point for realtime play. This file (not a catch-all
+ * route) only matches the literal path `/api/socket-io` -- vercel.json has a
+ * rewrite forwarding every `/api/socket-io/:path*` sub-path here too, which
+ * is what Socket.IO's own handshake and polling requests need (they land on
+ * that same mount path with a query string, not a fresh path segment). The
+ * server side has to be told to match on that full prefix explicitly (see
+ * `socketPath` below) since the rewrite preserves the original request path
+ * rather than trimming it back down to `/api/socket-io`.
+ *
+ * The client connects with a matching `VITE_SOCKET_PATH=/api/socket-io/socket.io`
+ * build-time env var (see client/src/lib/socket.ts) -- both sides just need
+ * to agree on the same literal string.
  *
  * Static hosting of `client/dist` is handled separately by Vercel's own build
  * output (see vercel.json) — this function's only job is the realtime layer.
@@ -27,6 +36,6 @@ if (!redisUrl) {
   );
 }
 
-const { http } = createTrioServer({ redisUrl });
+const { http } = createTrioServer({ redisUrl, socketPath: '/api/socket-io/socket.io' });
 
 export default http;
