@@ -4,9 +4,9 @@ import { createMemoryStore } from './store/memoryStore.js';
 import * as logic from './store/roomLogic.js';
 import { EMPTY_TTL_MS, GRACE_MS, IDLE_TTL_MS, type Room, type RoomStore } from './store/types.js';
 
-export { serialise, seatOfSocket } from './store/roomLogic';
+export { serialise, seatOfSocket } from './store/roomLogic.js';
 export { EMPTY_TTL_MS, GRACE_MS, IDLE_TTL_MS };
-export type { Room } from './store/types';
+export type { Room } from './store/types.js';
 
 /**
  * This module used to hold the room table directly (a `Map`). It now holds
